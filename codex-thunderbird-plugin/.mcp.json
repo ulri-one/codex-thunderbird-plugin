@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "codex-thunderbird": {
+      "command": "node",
+      "args": ["src/server.js"],
+      "cwd": "."
+    }
+  }
+}
+

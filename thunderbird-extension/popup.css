@@ -1,0 +1,153 @@
+:root {
+  color-scheme: light;
+  --bg: #f7f9fc;
+  --panel: #ffffff;
+  --ink: #172033;
+  --muted: #637083;
+  --line: #d9e1ec;
+  --blue: #2563eb;
+  --blue-strong: #174bb8;
+  --green: #12805c;
+}
+
+body {
+  font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+  width: 340px;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+main {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+header {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+header img {
+  width: 48px;
+  height: 48px;
+}
+
+h1 {
+  font-size: 18px;
+  line-height: 1.15;
+  margin: 0 0 4px;
+}
+
+p {
+  margin: 0;
+}
+
+#status {
+  color: var(--muted);
+}
+
+#status.paired {
+  color: var(--green);
+  font-weight: 650;
+}
+
+.steps,
+dl {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+ol {
+  margin: 0;
+  padding: 12px 14px 12px 28px;
+}
+
+li + li {
+  margin-top: 6px;
+}
+
+code {
+  font: 12px ui-monospace, SFMono-Regular, Consolas, monospace;
+  background: #edf2f7;
+  border: 1px solid #d8e0ea;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+form {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  display: grid;
+  gap: 5px;
+  font-weight: 650;
+}
+
+input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: #fff;
+  padding: 9px 10px;
+}
+
+input:focus {
+  border-color: var(--blue);
+  outline: 2px solid rgba(37, 99, 235, 0.15);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 9px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#pair {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: white;
+}
+
+#pair:hover {
+  background: var(--blue-strong);
+}
+
+#disconnect {
+  background: white;
+  color: var(--ink);
+}
+
+dl {
+  margin: 0;
+  padding: 10px 12px;
+}
+
+dl div + div {
+  margin-top: 8px;
+}
+
+dt {
+  font-weight: 700;
+}
+
+dd {
+  color: var(--muted);
+  margin: 2px 0 0;
+}

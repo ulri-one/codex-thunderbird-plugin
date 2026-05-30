@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Codex Thunderbird Plugin">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="0.54" stop-color="#3155d4"/>
+      <stop offset="1" stop-color="#27346f"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="30" y1="37" x2="101" y2="93" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dff7f5"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <path d="M28 69c0-25 20-45 45-45 12 0 23 5 31 13-7-2-15-1-22 3 12 2 22 10 27 21-6-4-14-5-22-3 11 7 16 20 12 33-10 18-30 29-51 24-17-5-29-20-30-38 3 6 8 11 15 14-4-7-5-14-5-22z" fill="#0f172a" opacity=".18"/>
+  <rect x="26" y="42" width="76" height="54" rx="10" fill="url(#paper)"/>
+  <path d="M30 48l34 27 34-27" fill="none" stroke="#2849c7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 91l25-23m43 23L73 68" fill="none" stroke="#5eead4" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="91" cy="31" r="11" fill="#ffffff"/>
+  <path d="M91 23v16m-8-8h16" stroke="#3155d4" stroke-width="4" stroke-linecap="round"/>
+</svg>

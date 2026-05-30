@@ -1,0 +1,12 @@
+{
+  "name": "codex-thunderbird",
+  "version": "0.3.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

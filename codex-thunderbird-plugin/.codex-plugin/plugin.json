@@ -1,0 +1,25 @@
+{
+  "name": "codex-thunderbird",
+  "version": "0.3.0",
+  "description": "Fully local Codex Thunderbird Plugin for Thunderbird mail access.",
+  "author": {
+    "name": "Local Development"
+  },
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Codex Thunderbird Plugin",
+    "shortDescription": "Local Thunderbird mail access for Codex.",
+    "longDescription": "Expose Thunderbird accounts, folders, messages, and attachments to Codex through the Codex Thunderbird Plugin and paired Thunderbird extension.",
+    "developerName": "Local Development",
+    "category": "Productivity",
+    "capabilities": ["MCP", "Local", "Mail"],
+    "defaultPrompt": [
+      "List my Thunderbird folders.",
+      "Summarize messages in a folder.",
+      "Open an email attachment for analysis."
+    ],
+    "brandColor": "#3155D4",
+    "composerIcon": "./assets/icon-128.png",
+    "logo": "./assets/icon-128.png"
+  }
+}
