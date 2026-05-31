@@ -2,9 +2,9 @@
 
 ## Local-only communication
 
-The bridge must bind to `127.0.0.1`, not `0.0.0.0`. It starts lazily when
-pairing or a Thunderbird command needs it, and rejects requests whose remote
-address is not loopback.
+The bridge daemon must bind to `127.0.0.1`, not `0.0.0.0`. The MCP helper
+starts or reuses the daemon when Codex loads the plugin or when pairing needs
+it, and the daemon rejects requests whose remote address is not loopback.
 
 ## Pairing
 
@@ -16,6 +16,10 @@ Pairing is initiated from Codex:
 4. The bridge returns a generated API token to the extension.
 5. The token is stored in Thunderbird local extension storage.
 
+The six-digit pairing PIN is kept in bridge-daemon memory only. It is not saved
+to the Codex plugin state file and is lost if the daemon exits before the
+Thunderbird add-on completes pairing.
+
 Recommended production hardening:
 
 - Expire pairing PINs after 2 minutes. The prototype does this.
@@ -24,8 +28,9 @@ Recommended production hardening:
 - Rotate the API token on demand by calling `revoke_pairing` and pairing again.
 - Show connected extension ID and last-seen time in Codex.
 - Add a `revoke_pairing` tool. The prototype does this.
-- Store bridge state under the user's Codex data directory with restrictive
-  file permissions.
+- Store only the durable bearer token under the user's Codex data directory
+  with restrictive file permissions. Pairing PINs, extension IDs, last-seen
+  timestamps, and request queues should remain in memory only.
 
 ## Data minimization
 

@@ -1,35 +1,15 @@
 const http = require("http");
-const crypto = require("crypto");
-const fs = require("fs");
 const path = require("path");
+const { spawn } = require("child_process");
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.CODEX_THUNDERBIRD_PORT || 17654);
-const REQUEST_TIMEOUT_MS = clampEnvNumber("CODEX_THUNDERBIRD_REQUEST_TIMEOUT_MS", 45000, 5000, 300000);
-const POLL_TIMEOUT_MS = clampEnvNumber("CODEX_THUNDERBIRD_POLL_TIMEOUT_MS", 15000, 1000, 60000);
-const PAIRING_TTL_MS = 120000;
-const MAX_BODY_BYTES = 1024 * 1024;
-const MAX_PENDING_REQUESTS = 100;
-const DEFAULT_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
-const MAX_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024;
-const DEFAULT_ATTACHMENT_CHUNK_BYTES = 1024 * 1024;
-
-const stateDir = process.env.CODEX_THUNDERBIRD_STATE_DIR || path.join(process.cwd(), ".codex-thunderbird-state");
-const stateFile = path.join(stateDir, "state.json");
-
-let persisted = loadState();
-let pairing = null;
-let failedPairAttempts = [];
-let pending = [];
-let waiters = new Map();
-let pollWaiters = [];
-let bridgeServer = null;
-let bridgeStarted = false;
-let bridgeStarting = null;
+const DAEMON_READY_TIMEOUT_MS = 8000;
+let daemonStarting = null;
 
 const tools = [
-  tool("start_pairing", "Start the local bridge on 127.0.0.1, create a short-lived PIN, and return the URL/PIN to paste into Thunderbird."),
-  tool("get_status", "Get local bridge, pairing, last-seen, and Thunderbird extension connection status."),
+  tool("start_pairing", "Start or reuse the persistent local Thunderbird bridge daemon, create a short-lived PIN, and return the URL/PIN to paste into Thunderbird."),
+  tool("get_status", "Get persistent bridge daemon, pairing, last-seen, and Thunderbird extension connection status."),
   tool("revoke_pairing", "Revoke the current Thunderbird extension token and clear pending requests."),
   tool("get_capabilities", "Show pairing steps, mailbox access rules, command categories, and every supported Thunderbird command."),
   tool("list_accounts", "List Thunderbird accounts. Accounts blocked in Thunderbird Manage allowed accounts are returned with sensitive email details redacted."),
@@ -160,240 +140,94 @@ function obj() {
   return { type: "object" };
 }
 
-function clampEnvNumber(name, fallback, min, max) {
-  const value = Number(process.env[name] || fallback);
-  if (!Number.isFinite(value)) return fallback;
-  return Math.min(Math.max(value, min), max);
-}
+async function ensureDaemon() {
+  const existing = await daemonStatus().catch(() => null);
+  if (existing) return existing;
+  if (daemonStarting) return daemonStarting;
 
-function loadState() {
-  try {
-    return JSON.parse(fs.readFileSync(stateFile, "utf8"));
-  } catch {
-    return { token: null, scopes: [], lastSeenAt: null };
-  }
-}
+  daemonStarting = (async () => {
+    const child = startDaemonProcess();
+    child.unref();
 
-function saveState() {
-  fs.mkdirSync(stateDir, { recursive: true });
-  fs.writeFileSync(stateFile, JSON.stringify(persisted, null, 2));
-}
-
-function headers(extra) {
-  return Object.assign({
-    "content-type": "application/json",
-    "cache-control": "no-store",
-    "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "authorization,content-type"
-  }, extra || {});
-}
-
-function sendJson(res, status, body) {
-  res.writeHead(status, headers());
-  res.end(JSON.stringify(body));
-}
-
-function isLoopback(req) {
-  const remote = req.socket.remoteAddress;
-  return remote === "127.0.0.1" || remote === "::1" || remote === "::ffff:127.0.0.1";
-}
-
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", chunk => {
-      data += chunk;
-      if (Buffer.byteLength(data) > MAX_BODY_BYTES) req.destroy(new Error("Request body too large"));
-    });
-    req.on("end", () => {
+    const deadline = Date.now() + DAEMON_READY_TIMEOUT_MS;
+    let lastError = null;
+    while (Date.now() < deadline) {
       try {
-        resolve(data ? JSON.parse(data) : {});
+        return await daemonStatus();
       } catch (error) {
-        reject(error);
+        lastError = error;
+        await delay(100);
       }
-    });
-    req.on("error", reject);
-  });
-}
-
-async function handleHttp(req, res) {
-  if (!isLoopback(req)) {
-    sendJson(res, 403, { error: "Loopback only" });
-    return;
-  }
-
-  const url = new URL(req.url, `http://${HOST}:${PORT}`);
+    }
+    throw new Error(`Could not start Codex Thunderbird bridge daemon: ${lastError ? lastError.message : "not ready"}`);
+  })();
 
   try {
-    if (req.method === "OPTIONS") {
-      res.writeHead(204, headers());
-      res.end();
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/pair") {
-      const body = await readBody(req);
-      if (isPairRateLimited()) {
-        sendJson(res, 429, { error: "Too many pairing attempts. Try again shortly." });
-        return;
-      }
-      if (!pairing || Date.now() > pairing.expiresAt || body.pin !== pairing.pin) {
-        recordFailedPairAttempt();
-        sendJson(res, 401, { error: "Invalid or expired PIN" });
-        return;
-      }
-
-      persisted.token = crypto.randomBytes(32).toString("hex");
-      persisted.extensionId = body.extensionId || "unknown";
-      persisted.lastSeenAt = new Date().toISOString();
-      pairing = null;
-      saveState();
-      sendJson(res, 200, { token: persisted.token });
-      return;
-    }
-
-    if (url.pathname === "/v1/requests") {
-      if (!authorize(getBearerToken(req))) {
-        sendJson(res, 401, { error: "Unauthorized" });
-        return;
-      }
-
-      persisted.lastSeenAt = new Date().toISOString();
-      saveState();
-      await sendPendingOrWait(res);
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/v1/responses") {
-      const body = await readBody(req);
-      if (!authorize(getBearerToken(req))) {
-        sendJson(res, 401, { error: "Unauthorized" });
-        return;
-      }
-
-      persisted.lastSeenAt = new Date().toISOString();
-      saveState();
-      const waiter = waiters.get(body.id);
-      if (waiter) {
-        waiters.delete(body.id);
-        body.error ? waiter.reject(new Error(body.error)) : waiter.resolve(body.result);
-      }
-      sendJson(res, 200, { ok: true });
-      return;
-    }
-
-    sendJson(res, 404, { error: "Not found" });
-  } catch (error) {
-    sendJson(res, 500, { error: error.message });
+    return await daemonStarting;
+  } finally {
+    daemonStarting = null;
   }
 }
 
-function getBearerToken(req) {
-  const value = req.headers.authorization || "";
-  const match = /^Bearer\s+(.+)$/i.exec(value);
-  return match ? match[1] : "";
-}
-
-function authorize(token) {
-  if (!persisted.token || !token) return false;
-  const actual = Buffer.from(token);
-  const expected = Buffer.from(persisted.token);
-  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
-}
-
-function isPairRateLimited() {
-  const cutoff = Date.now() - 60000;
-  failedPairAttempts = failedPairAttempts.filter(time => time >= cutoff);
-  return failedPairAttempts.length >= 10;
-}
-
-function recordFailedPairAttempt() {
-  failedPairAttempts.push(Date.now());
-}
-
-async function startBridge() {
-  if (bridgeStarted) return;
-  if (bridgeStarting) return bridgeStarting;
-  bridgeStarting = new Promise((resolve, reject) => {
-    const server = http.createServer(handleHttp);
-    server.on("error", error => {
-      if (!bridgeStarted) {
-        bridgeServer = null;
-        bridgeStarting = null;
-        reject(error);
-        return;
-      }
-      process.stderr.write(`Codex Thunderbird Plugin bridge failed: ${error.message}\n`);
-    });
-    server.listen(PORT, HOST, () => {
-      bridgeServer = server;
-      bridgeStarted = true;
-      bridgeStarting = null;
-      resolve();
-    });
-  });
-  await bridgeStarting;
-}
-
-async function startPairing() {
-  await startBridge();
-  pairing = {
-    pin: String(crypto.randomInt(0, 1000000)).padStart(6, "0"),
-    expiresAt: Date.now() + PAIRING_TTL_MS
-  };
-  return {
-    bridgeUrl: `http://${HOST}:${PORT}`,
-    pin: pairing.pin,
-    expiresAt: new Date(pairing.expiresAt).toISOString()
-  };
-}
-
-function sendPendingOrWait(res) {
-  if (pending.length) {
-    sendJson(res, 200, { requests: pending.splice(0, 5) });
-    return Promise.resolve();
-  }
-
-  return new Promise(resolve => {
-    const waiter = {
-      res,
-      resolve,
-      timeout: setTimeout(() => {
-        pollWaiters = pollWaiters.filter(item => item !== waiter);
-        sendJson(res, 200, { requests: [] });
-        resolve();
-      }, POLL_TIMEOUT_MS)
-    };
-    pollWaiters.push(waiter);
+function startDaemonProcess() {
+  const daemonPath = path.join(__dirname, "bridge-daemon.js");
+  return spawn(process.execPath, [daemonPath], {
+    cwd: process.cwd(),
+    env: process.env,
+    detached: true,
+    stdio: "ignore",
+    windowsHide: true
   });
 }
 
-function flushPollWaiters() {
-  while (pending.length && pollWaiters.length) {
-    const waiter = pollWaiters.shift();
-    clearTimeout(waiter.timeout);
-    sendJson(waiter.res, 200, { requests: pending.splice(0, 5) });
-    waiter.resolve();
-  }
+async function daemonStatus() {
+  return httpJson("GET", "/mcp/status");
 }
 
-function normalizeParams(method, params) {
-  const normalized = params || {};
-  if (method === "get_attachment") {
-    normalized.maxBytes = clampNumber(normalized.maxBytes, DEFAULT_ATTACHMENT_MAX_BYTES, 1, MAX_ATTACHMENT_MAX_BYTES);
-  }
-  if (method === "get_attachment_chunk") {
-    normalized.offset = Math.max(Number(normalized.offset || 0), 0);
-    normalized.length = clampNumber(normalized.length, DEFAULT_ATTACHMENT_CHUNK_BYTES, 1, DEFAULT_ATTACHMENT_CHUNK_BYTES);
-  }
-  return normalized;
+async function daemonPost(pathname, body) {
+  await ensureDaemon();
+  return httpJson("POST", pathname, body || {});
 }
 
-function clampNumber(value, fallback, min, max) {
-  const numeric = Number(value || fallback);
-  if (!Number.isFinite(numeric)) return fallback;
-  return Math.min(Math.max(numeric, min), max);
+function httpJson(method, pathname, body) {
+  return new Promise((resolve, reject) => {
+    const payload = body === undefined ? null : JSON.stringify(body);
+    const req = http.request({
+      host: HOST,
+      port: PORT,
+      path: pathname,
+      method,
+      timeout: 5000,
+      headers: payload ? {
+        "content-type": "application/json",
+        "content-length": Buffer.byteLength(payload)
+      } : undefined
+    }, res => {
+      let data = "";
+      res.setEncoding("utf8");
+      res.on("data", chunk => {
+        data += chunk;
+      });
+      res.on("end", () => {
+        let parsed = {};
+        try {
+          parsed = data ? JSON.parse(data) : {};
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        if (res.statusCode >= 400) {
+          reject(new Error(parsed.error || `Bridge daemon returned HTTP ${res.statusCode}`));
+          return;
+        }
+        resolve(parsed);
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("Bridge daemon request timed out")));
+    req.on("error", reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
 }
 
 function validateToolArgs(method, params) {
@@ -409,77 +243,22 @@ function validateToolArgs(method, params) {
   }
 }
 
-function enqueue(method, params) {
-  if (!persisted.token) {
-    throw new Error("Thunderbird extension is not paired. Call start_pairing first.");
-  }
-  const normalized = normalizeParams(method, params || {});
-  validateToolArgs(method, normalized);
-  if (pending.length >= MAX_PENDING_REQUESTS) throw new Error("Too many pending Thunderbird requests");
-
-  const id = crypto.randomUUID();
-  pending.push({ id, method, params: normalized });
-  flushPollWaiters();
-
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      waiters.delete(id);
-      reject(new Error("Timed out waiting for Thunderbird extension"));
-    }, REQUEST_TIMEOUT_MS);
-
-    waiters.set(id, {
-      resolve: value => {
-        clearTimeout(timeout);
-        resolve(value);
-      },
-      reject: error => {
-        clearTimeout(timeout);
-        reject(error);
-      }
-    });
-  });
-}
-
 async function callTool(name, args) {
-  if (name === "start_pairing") return startPairing();
-  if (name === "get_status") {
-    return {
-      bridgeUrl: `http://${HOST}:${PORT}`,
-      bridgeStarted,
-      paired: Boolean(persisted.token),
-      extensionId: persisted.extensionId || null,
-      lastSeenAt: persisted.lastSeenAt || null,
-      scopes: persisted.scopes || []
-    };
-  }
-  if (name === "revoke_pairing") {
-    persisted.token = null;
-    persisted.extensionId = null;
-    persisted.lastSeenAt = null;
-    pending = [];
-    for (const waiter of waiters.values()) waiter.reject(new Error("Pairing revoked"));
-    waiters.clear();
-    saveState();
-    return { paired: false };
-  }
+  if (name === "start_pairing") return daemonPost("/mcp/start_pairing");
+  if (name === "get_status") return ensureDaemon();
+  if (name === "revoke_pairing") return daemonPost("/mcp/revoke_pairing");
   if (name === "get_capabilities") return capabilities();
-  if (name === "add_inbox") {
-    if (!persisted.scopes.includes(args.scope)) persisted.scopes.push(args.scope);
-    saveState();
-    return { scopes: persisted.scopes };
-  }
-  if (name === "remove_inbox") {
-    persisted.scopes = persisted.scopes.filter(scope => scope !== args.scope);
-    saveState();
-    return { scopes: persisted.scopes };
-  }
-  await startBridge();
-  return enqueue(name, args);
+
+  const params = args || {};
+  validateToolArgs(name, params);
+  const response = await daemonPost("/mcp/call", { method: name, params });
+  return response.result;
 }
 
 function capabilities() {
   return {
     pairingFlow: [
+      "The plugin starts a persistent local bridge daemon when Codex loads the MCP server or when start_pairing is called.",
       "Call start_pairing in Codex.",
       "Open the Codex Thunderbird Plugin popup in Thunderbird.",
       "Paste the returned bridgeUrl and six-digit pin.",
@@ -487,7 +266,7 @@ function capabilities() {
       "Use Manage allowed accounts in Thunderbird to allow all accounts or selected accounts."
     ],
     securityModel: {
-      localBridge: `The HTTP bridge listens only on ${HOST}:${PORT} and starts lazily when start_pairing or a Thunderbird command needs it.`,
+      localBridge: `The detached HTTP bridge daemon listens only on ${HOST}:${PORT}.`,
       pairing: "Pairing uses a short-lived PIN and a local bearer token stored by the Thunderbird extension.",
       mailboxAccess: "Thunderbird enforces Manage allowed accounts. Blocked accounts stay visible in list_accounts with email details redacted, and non-allowed mail commands return an error that names Manage allowed accounts."
     },
@@ -544,6 +323,14 @@ async function handleRpc(line) {
     writeRpc({ jsonrpc: "2.0", id: request.id, error: { code: -32000, message: error.message } });
   }
 }
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+ensureDaemon().catch(error => {
+  process.stderr.write(`Codex Thunderbird bridge daemon is not ready yet: ${error.message}\n`);
+});
 
 let buffer = "";
 process.stdin.setEncoding("utf8");

@@ -1,6 +1,6 @@
 {
   "name": "codex-thunderbird",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Codex Plugin for Thunderbird mail access.",
   "homepage": "https://github.com/ulri-one/codex-thunderbird-plugin",
   "repository": "https://github.com/ulri-one/codex-thunderbird-plugin",
@@ -10,18 +10,19 @@
     "name": "ULRI",
     "url": "https://ulri.one"
   },
+  "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Codex Thunderbird",
     "shortDescription": "Local Thunderbird mail access for Codex.",
-    "longDescription": "Expose Thunderbird accounts, folders, messages, tags, attachments, and local sorting rules to Codex through a paired Thunderbird extension. Start with start_pairing, then use get_status and get_capabilities to discover the available commands. Thunderbird owns mailbox permissions through Manage allowed accounts, so blocked accounts are redacted in list_accounts and rejected by mail commands.",
+    "longDescription": "Expose Thunderbird accounts, folders, messages, tags, attachments, and local sorting rules to Codex through a paired Thunderbird extension. Start with the MCP tool start_pairing, then use get_status and get_capabilities to discover commands. A persistent local bridge daemon keeps the pairing URL available while the lightweight MCP server handles tool registration. Thunderbird owns mailbox permissions through Manage allowed accounts, so blocked accounts are redacted in list_accounts and rejected by mail commands.",
     "developerName": "ULRI",
     "websiteURL": "https://github.com/ulri-one/codex-thunderbird-plugin",
     "category": "Productivity",
     "capabilities": ["MCP", "Local", "Mail"],
     "defaultPrompt": [
-      "Pair Thunderbird with Codex using start_pairing.",
-      "Show Thunderbird command categories with get_capabilities.",
+      "Call the start_pairing MCP tool for Thunderbird.",
+      "Call get_capabilities for Thunderbird commands.",
       "List Thunderbird accounts and folders."
     ],
     "brandColor": "#3155D4",

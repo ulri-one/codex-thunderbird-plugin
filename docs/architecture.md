@@ -5,14 +5,14 @@
 Codex cannot safely reach into Thunderbird directly without either a local tool
 or a plugin. This solution is a two-part local bridge:
 
-1. The Codex plugin runs an MCP server over stdio.
-2. The same process exposes an HTTP bridge bound only to `127.0.0.1`, started
-   lazily when pairing or a Thunderbird command needs it.
-3. Thunderbird runs a MailExtension with a small popup UI.
-4. The user starts pairing from Codex, enters the one-time PIN in Thunderbird,
+1. The Codex plugin runs a lightweight MCP server over stdio.
+2. The MCP server starts or reuses a separate local bridge daemon.
+3. The bridge daemon exposes HTTP bound only to `127.0.0.1`.
+4. Thunderbird runs a MailExtension with a small popup UI.
+5. The user starts pairing from Codex, enters the one-time PIN in Thunderbird,
    and the extension receives a local API token.
-5. When Codex calls an MCP mail tool, the Codex bridge queues a local request.
-6. The Thunderbird extension polls for work, executes Thunderbird APIs, and
+6. When Codex calls an MCP mail tool, the bridge daemon queues a local request.
+7. The Thunderbird extension polls for work, executes Thunderbird APIs, and
    posts the result back to the bridge.
 
 This avoids external networking and avoids parsing Thunderbird profile internals.
@@ -37,6 +37,15 @@ The bridge uses loopback HTTP:
 
 The bridge rejects non-loopback remote addresses and sends no data to external
 services.
+
+The bridge daemon owns the active pairing PIN, pending requests, and responses
+in memory. The PIN is intentionally not written to disk. Codex may restart or
+recycle the stdio MCP helper, but the pairing window depends on the bridge
+daemon staying alive.
+
+The state file contains only the Thunderbird bearer token. Extension ID,
+last-seen timestamp, legacy Codex-side scopes, active pairing PINs, and request
+queues are runtime state and are intentionally not persisted.
 
 ## Codex MCP tools
 

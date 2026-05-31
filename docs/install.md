@@ -31,9 +31,9 @@ cwd = "C:\\path\\to\\codex-plugin"
 
 Then restart Codex. The server should expose tools such as `start_pairing`,
 `list_accounts`, `list_folders`, `list_messages`, `read_message`, and
-`get_attachment`. The MCP process lists tools without immediately binding the
-local HTTP bridge; the bridge starts when `start_pairing` or a paired command
-needs Thunderbird.
+`get_attachment`. The MCP process lists tools over stdio and starts or reuses a
+separate loopback bridge daemon. That daemon keeps pairing and pending
+Thunderbird requests alive if Codex recycles the MCP helper process.
 
 ## Codex personal plugin install
 

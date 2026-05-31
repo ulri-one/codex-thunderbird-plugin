@@ -2,7 +2,8 @@
 
 ## Pairing and Status
 
-- `start_pairing` - create a short-lived local PIN and bridge URL.
+- `start_pairing` - start or reuse the persistent local bridge daemon, then
+  create a short-lived local PIN and bridge URL.
 - `get_status` - show bridge URL, pairing state, extension ID, last-seen time,
   and Codex-side visible scopes.
 - `revoke_pairing` - revoke the local token and clear pending requests.

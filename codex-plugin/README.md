@@ -28,9 +28,17 @@ The MCP server does not read mail directly. It queues requests for the
 Thunderbird extension, waits for the extension to respond, and returns that
 result to Codex.
 
-The local HTTP bridge starts lazily when `start_pairing` or a paired
-Thunderbird command needs it. This lets Codex list the available MCP tools
-without binding localhost during plugin startup.
+The MCP process is intentionally small. It lists tools over stdio and starts or
+reuses a separate local bridge daemon in `src/bridge-daemon.js`. The daemon owns
+the loopback HTTP bridge, active pairing PIN, pending Thunderbird requests,
+responses, extension ID, last-seen timestamp, and legacy Codex-side scopes in
+memory. The local state file stores only the durable Thunderbird bearer token,
+which is required to keep an existing Thunderbird pairing usable after the
+bridge daemon restarts.
+
+The MCP process also starts the daemon opportunistically on startup so the
+bridge is ready as soon as Codex loads the plugin. If the daemon is already
+running, later MCP processes reuse it.
 
 Mailbox access is enforced in Thunderbird. Open the add-on popup and use
 `Manage allowed accounts` to choose all accounts or only selected accounts.
