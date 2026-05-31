@@ -13,7 +13,7 @@ foreach ($target in $targets) {
   New-Item -ItemType Directory -Force -Path $target | Out-Null
 }
 
-function New-BridgeIcon($size, $path) {
+function New-BridgeIcon($size, $outputPath) {
   $bitmap = New-Object System.Drawing.Bitmap $size, $size
   $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
   $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
@@ -34,34 +34,51 @@ function New-BridgeIcon($size, $path) {
 
   $mail = New-Object System.Drawing.RectangleF (26*$scale), (42*$scale), (76*$scale), (54*$scale)
   $paper = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(246,255,253))
-  $graphics.FillRectangle($paper, $mail)
+  $mailRadius = 11 * $scale
+  $mailPath = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $mailDiameter = $mailRadius * 2
+  $mailPath.AddArc($mail.X, $mail.Y, $mailDiameter, $mailDiameter, 180, 90)
+  $mailPath.AddArc($mail.Right - $mailDiameter, $mail.Y, $mailDiameter, $mailDiameter, 270, 90)
+  $mailPath.AddArc($mail.Right - $mailDiameter, $mail.Bottom - $mailDiameter, $mailDiameter, $mailDiameter, 0, 90)
+  $mailPath.AddArc($mail.X, $mail.Bottom - $mailDiameter, $mailDiameter, $mailDiameter, 90, 90)
+  $mailPath.CloseFigure()
+  $graphics.FillPath($paper, $mailPath)
 
   $penBlue = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(40,73,199)), (7*$scale)
   $penBlue.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
   $penBlue.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
   $penBlue.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
   $graphics.DrawLines($penBlue, @(
-    (New-Object System.Drawing.PointF (30*$scale), (49*$scale)),
-    (New-Object System.Drawing.PointF (64*$scale), (75*$scale)),
-    (New-Object System.Drawing.PointF (98*$scale), (49*$scale))
+    (New-Object System.Drawing.PointF (32*$scale), (49*$scale)),
+    (New-Object System.Drawing.PointF (64*$scale), (74*$scale)),
+    (New-Object System.Drawing.PointF (96*$scale), (49*$scale))
   ))
 
-  $penLight = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(94,234,212)), (5*$scale)
+  $penLight = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(94,234,212)), (6*$scale)
   $penLight.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
   $penLight.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-  $graphics.DrawLine($penLight, (30*$scale), (91*$scale), (55*$scale), (68*$scale))
-  $graphics.DrawLine($penLight, (98*$scale), (91*$scale), (73*$scale), (68*$scale))
+  $penLight.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
+  $graphics.DrawLine($penLight, (32*$scale), (89*$scale), (57*$scale), (67*$scale))
+  $graphics.DrawLine($penLight, (96*$scale), (89*$scale), (71*$scale), (67*$scale))
 
-  $white = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::White)
-  $graphics.FillEllipse($white, (80*$scale), (20*$scale), (22*$scale), (22*$scale))
-  $spark = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(49,85,212)), (4*$scale)
-  $spark.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
-  $spark.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-  $graphics.DrawLine($spark, (91*$scale), (24*$scale), (91*$scale), (38*$scale))
-  $graphics.DrawLine($spark, (84*$scale), (31*$scale), (98*$scale), (31*$scale))
+  $outline = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(140,255,255,255)), (3*$scale)
+  $graphics.DrawPath($outline, $mailPath)
 
-  $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+  $outline.Dispose()
+  $mailPath.Dispose()
+  $penLight.Dispose()
+  $penBlue.Dispose()
+  $paper.Dispose()
+  $brush.Dispose()
+  $pathBg.Dispose()
   $graphics.Dispose()
+
+  $tempPath = "$outputPath.tmp.png"
+  if (Test-Path $tempPath) {
+    Remove-Item -LiteralPath $tempPath -Force
+  }
+  $bitmap.Save($tempPath, [System.Drawing.Imaging.ImageFormat]::Png)
+  Move-Item -LiteralPath $tempPath -Destination $outputPath -Force
   $bitmap.Dispose()
 }
 

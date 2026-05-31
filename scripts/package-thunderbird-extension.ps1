@@ -2,15 +2,16 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $extensionDir = Join-Path $repoRoot "thunderbird-extension"
-$distDir = Join-Path $repoRoot "dist"
-$zipPath = Join-Path $distDir "codex-thunderbird-plugin.xpi"
-$plainZipPath = Join-Path $distDir "codex-thunderbird-plugin.zip"
+$releaseDir = Join-Path $repoRoot "release"
+$zipPath = Join-Path $releaseDir "codex-thunderbird-plugin.xpi"
+$plainZipPath = Join-Path $releaseDir "codex-thunderbird-plugin.zip"
+$installNotesPath = Join-Path $releaseDir "CODEX-INSTALLATION.md"
 
 if (!(Test-Path $extensionDir)) {
   throw "Extension directory not found: $extensionDir"
 }
 
-New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 if (Test-Path $zipPath) {
   Remove-Item -LiteralPath $zipPath -Force
 }
@@ -20,5 +21,31 @@ if (Test-Path $plainZipPath) {
 
 Compress-Archive -Path (Join-Path $extensionDir "*") -DestinationPath $plainZipPath
 Copy-Item -LiteralPath $plainZipPath -Destination $zipPath
+$installNotes = @'
+# Codex Installation
+
+This release folder contains the bundled Thunderbird add-on files for Codex
+Thunderbird Plugin.
+
+For the complete installation and pairing process, read the repository
+README.md:
+
+```text
+../README.md
+```
+
+The short version:
+
+1. Add `https://github.com/ulri-one/codex-thunderbird-plugin.git` as a Codex
+   plugin marketplace/repository source.
+2. Install and enable `Codex Thunderbird Plugin` in Codex.
+3. Install `codex-thunderbird-plugin.xpi` in Thunderbird.
+4. In Codex, run `@Codex Thunderbird Plugin start_pairing`.
+5. Approve localhost access when Codex asks for elevated permission.
+6. Enter the returned bridge URL and PIN in the Thunderbird add-on popup.
+'@
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($installNotesPath, $installNotes + [Environment]::NewLine, $utf8NoBom)
 Write-Output "Packaged Thunderbird extension at $zipPath"
 Write-Output "Packaged Thunderbird extension zip at $plainZipPath"
+Write-Output "Wrote Codex installation notes at $installNotesPath"

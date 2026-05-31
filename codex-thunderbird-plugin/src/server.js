@@ -470,7 +470,7 @@ async function handleRpc(line) {
         result: {
           protocolVersion: "2024-11-05",
           capabilities: { tools: {} },
-          serverInfo: { name: "codex-thunderbird", version: "0.3.0" }
+          serverInfo: { name: "codex-thunderbird", version: "0.4.0-pre.1" }
         }
       });
       return;

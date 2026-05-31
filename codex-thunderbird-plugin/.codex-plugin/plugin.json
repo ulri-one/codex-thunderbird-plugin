@@ -1,16 +1,18 @@
 {
   "name": "codex-thunderbird",
-  "version": "0.3.0",
-  "description": "Fully local Codex Thunderbird Plugin for Thunderbird mail access.",
+  "version": "0.4.0-pre.1",
+  "description": "Pre-release local Codex Thunderbird Plugin for Thunderbird mail access.",
   "author": {
-    "name": "Local Development"
+    "name": "ULRI",
+    "url": "https://ulri.one"
   },
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Codex Thunderbird Plugin",
     "shortDescription": "Local Thunderbird mail access for Codex.",
     "longDescription": "Expose Thunderbird accounts, folders, messages, and attachments to Codex through the Codex Thunderbird Plugin and paired Thunderbird extension.",
-    "developerName": "Local Development",
+    "developerName": "ULRI",
+    "homepageUrl": "https://ulri.one",
     "category": "Productivity",
     "capabilities": ["MCP", "Local", "Mail"],
     "defaultPrompt": [

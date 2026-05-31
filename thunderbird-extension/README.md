@@ -1,5 +1,7 @@
 # Codex Thunderbird Plugin Extension
 
+Pre-release version: `0.4.0pre1`
+
 This MailExtension pairs Thunderbird with the local Codex Thunderbird Plugin.
 
 ## Development install
@@ -31,4 +33,4 @@ Run this from the repository root:
 .\scripts\package-thunderbird-extension.ps1
 ```
 
-The packaged archives are written to `dist/`.
+The packaged archives are written to `release/`.

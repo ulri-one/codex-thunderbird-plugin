@@ -1,36 +1,155 @@
 # Codex Thunderbird Plugin
 
-This repository contains the Codex Thunderbird Plugin, a fully local bridge
-between the Codex app and Thunderbird.
+Pre-release version: `0.4.0-pre.1`
 
-## Current capability check
+Codex Thunderbird Plugin connects your local Thunderbird installation to Codex.
+It lets Codex work with the mail accounts already configured in Thunderbird
+without asking for IMAP, SMTP, OAuth, or mail-provider passwords.
 
-In this Codex session there is no exposed Thunderbird, IMAP, POP3, SMTP, or mail
-connector tool. A generic mail inbox can still be made available to Codex by
-writing a local MCP server, but Codex needs such a server or plugin to exist
-first.
+Publisher: ULRI, https://ulri.one
 
-SMTP is only for sending mail. Reading inboxes requires IMAP, POP3, local
-mailbox files, or Thunderbird's own MailExtension APIs.
+The project is intentionally local-first. Codex runs a local MCP plugin and a
+loopback-only bridge on your machine. Thunderbird runs a MailExtension add-on
+that calls Thunderbird's supported mail APIs. The two sides pair with a short
+PIN, then exchange requests only over `127.0.0.1`.
 
-## Sub-projects
+This is a pre-release. It is useful for local testing and early adopters, but
+the interface, packaging, and permission model may still change.
 
-- `codex-thunderbird-plugin/` - Codex Thunderbird Plugin prototype. It exposes MCP tools and
-  a loopback-only HTTP bridge for Thunderbird.
-- `thunderbird-extension/` - Codex Thunderbird Plugin MailExtension prototype. It pairs with
-  the local bridge and performs Thunderbird account, folder, message, and
-  attachment operations.
-- `docs/` - Architecture, privacy notes, setup flow, and development plan.
-- `scripts/` - Local install/package helpers.
+## What It Provides
 
-See `docs/install.md` for step-by-step setup in Thunderbird and Codex.
-See `docs/commands.md` for the full MCP command reference.
-See `docs/publishing.md` for Thunderbird signing and GitHub/Codex publishing notes.
+- List Thunderbird accounts and folders.
+- Search, list, and read messages through Thunderbird.
+- Read message attachments, including chunked reads for larger files.
+- Move, copy, archive, delete, flag, and tag messages where Thunderbird and the
+  account type allow it.
+- Create and run extension-local sorting rules on demand.
+- Keep mail credentials inside Thunderbird.
 
-## Recommended architecture
+## Repository Layout
 
-Use Thunderbird as the source of truth for configured accounts and mail access.
-The Codex plugin does not read Thunderbird profile files directly and does not
-ask for mail provider passwords. Instead, the Thunderbird extension calls
-Thunderbird's supported MailExtension APIs and returns results to the local
-Codex bridge after explicit pairing.
+- `thunderbird-extension/` - Thunderbird MailExtension add-on. It displays the
+  pairing popup, stores the local bridge token, and performs account, folder,
+  message, tag, rule, and attachment operations through Thunderbird APIs.
+- `codex-thunderbird-plugin/` - Codex plugin and MCP server. It exposes Codex
+  tools, starts the local bridge at `http://127.0.0.1:17654`, and queues
+  requests for the paired Thunderbird add-on.
+- `assets/` - Source artwork for the shared plugin/add-on icon.
+- `scripts/` - Helper scripts for icon generation, local Codex plugin install,
+  and Thunderbird release packaging.
+- `docs/` - Architecture, command reference, privacy/security notes, publishing
+  notes, and development context.
+- `release/` - Generated Thunderbird add-on bundles and release-facing install
+  notes. This folder is created by the packaging script.
+
+## Requirements
+
+- Thunderbird 102 or newer.
+- Codex Desktop with plugin marketplace support.
+- Node.js 18 or newer available on `PATH`.
+- PowerShell on Windows for the included helper scripts.
+
+## Install In Codex From The Repository
+
+The public repository URL is:
+
+```text
+https://github.com/ulri-one/codex-thunderbird-plugin.git
+```
+
+Add this repository as a Codex plugin marketplace source, then install and
+activate `Codex Thunderbird Plugin` from that marketplace. The exact UI labels
+may vary by Codex Desktop version, but the flow is:
+
+1. Open Codex Desktop settings.
+2. Go to plugin or marketplace settings.
+3. Add a marketplace/repository source with the URL above.
+4. Refresh the marketplace.
+5. Install and enable `Codex Thunderbird Plugin`.
+6. Restart Codex if it asks you to reload plugins.
+
+For local development, you can also install the plugin from a clone:
+
+```powershell
+.\scripts\install-codex-plugin.ps1
+```
+
+That copies `codex-thunderbird-plugin/` into your local Codex plugin directory
+and adds a personal marketplace entry.
+
+## Install The Thunderbird Add-on
+
+Use the packaged `.xpi` from `release/` when available:
+
+1. Open Thunderbird.
+2. Open `Add-ons and Themes`.
+3. Use the gear menu and choose `Install Add-on From File...`.
+4. Select `release/codex-thunderbird-plugin.xpi`.
+5. Confirm the requested permissions.
+6. Pin or open the add-on button if Thunderbird does not show it immediately.
+
+For development, load the unpacked add-on temporarily from
+`thunderbird-extension/` through Thunderbird's debugging add-on workflow.
+
+## Pair Thunderbird With Codex
+
+Pairing is required before Codex can read anything from Thunderbird.
+
+1. In Codex, mention the plugin and run:
+
+   ```text
+   @Codex Thunderbird Plugin start_pairing
+   ```
+
+2. Approve the elevated permission request when Codex asks to leave the sandbox
+   for that command. The bridge must bind to localhost networking
+   (`127.0.0.1:17654`) so Thunderbird can reach it.
+3. Codex returns a bridge URL and a short-lived PIN.
+4. In Thunderbird, click the `Codex Thunderbird Plugin` add-on button.
+5. Enter the bridge URL and PIN.
+6. Click pair.
+
+After pairing, you can ask Codex things like:
+
+```text
+@Codex Thunderbird Plugin List my Thunderbird folders.
+@Codex Thunderbird Plugin Summarize recent messages in my inbox.
+@Codex Thunderbird Plugin Find invoices from May in my work account.
+```
+
+## Build Release Files
+
+Regenerate icons:
+
+```powershell
+.\scripts\generate-icons.ps1
+```
+
+Bundle the Thunderbird add-on:
+
+```powershell
+.\scripts\package-thunderbird-extension.ps1
+```
+
+The script writes:
+
+- `release/codex-thunderbird-plugin.xpi`
+- `release/codex-thunderbird-plugin.zip`
+- `release/CODEX-INSTALLATION.md`
+
+## Privacy And Security
+
+The plugin does not ask for mail provider credentials. Thunderbird remains the
+mail access layer. The Codex plugin exposes only a loopback bridge on
+`127.0.0.1`, and the Thunderbird add-on must pair with a short-lived PIN before
+it can respond to requests.
+
+Review [SECURITY.md](SECURITY.md) before using this with sensitive mailboxes.
+
+## More Documentation
+
+- [Command reference](docs/commands.md)
+- [Architecture](docs/architecture.md)
+- [Privacy and security notes](docs/privacy-security.md)
+- [Publishing notes](docs/publishing.md)
+- [Contributing](CONTRIBUTING.md)
