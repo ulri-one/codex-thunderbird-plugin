@@ -3,10 +3,11 @@
 ## Summary
 
 Codex cannot safely reach into Thunderbird directly without either a local tool
-or a plugin. The proposed solution is a two-part local bridge:
+or a plugin. This solution is a two-part local bridge:
 
 1. The Codex plugin runs an MCP server over stdio.
-2. The same process exposes an HTTP bridge bound only to `127.0.0.1`.
+2. The same process exposes an HTTP bridge bound only to `127.0.0.1`, started
+   lazily when pairing or a Thunderbird command needs it.
 3. Thunderbird runs a MailExtension with a small popup UI.
 4. The user starts pairing from Codex, enters the one-time PIN in Thunderbird,
    and the extension receives a local API token.
@@ -39,34 +40,33 @@ services.
 
 ## Codex MCP tools
 
-Initial tool surface:
+Tool surface:
 
 - `start_pairing`
 - `get_status`
+- `revoke_pairing`
+- `get_capabilities`
 - `list_accounts`
 - `list_folders`
+- `create_folder`
+- `rename_folder`
+- `delete_folder`
+- `search_messages`
 - `list_messages`
 - `read_message`
+- `update_message_flags`
+- `move_messages`
+- `copy_messages`
+- `archive_messages`
+- `delete_messages`
+- tag, attachment, and rule commands
 - `list_attachments`
 - `get_attachment`
 - `add_inbox`
 - `remove_inbox`
 
-The `add_inbox` and `remove_inbox` tools are scoped as Codex-side visibility
-controls for Thunderbird accounts/folders. Creating real Thunderbird mail
-accounts programmatically is not part of Thunderbird's standard MailExtension
-surface and should remain a later native-helper feature if needed.
-
-## Generic IMAP/POP3/SMTP path
-
-A separate MCP server could connect to mail providers directly:
-
-- IMAP for reading folders/messages.
-- POP3 for downloading inbox messages.
-- SMTP for sending mail.
-
-That path requires storing provider hostnames, usernames, passwords or OAuth
-tokens, TLS settings, and per-provider quirks. For Thunderbird users, the
-Thunderbird extension route is usually better because Thunderbird already owns
-those accounts and credentials.
-
+`add_inbox` and `remove_inbox` are legacy Codex-side scope notes. The enforced
+security boundary is Thunderbird's popup-level `Manage allowed accounts` policy.
+When selected-account access is enabled, blocked accounts remain visible in
+`list_accounts` with email-like details redacted, and account-specific commands
+fail before returning mailbox content.

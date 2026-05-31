@@ -1,12 +1,11 @@
-# Codex Thunderbird Plugin
+# Codex Thunderbird
 
-This prototype exposes Thunderbird mail to Codex through MCP tools and a
-loopback-only bridge used by the paired Thunderbird extension.
+This plugin exposes the Thunderbird mail application to Codex through MCP tools and a loopback-only bridge used by the paired Thunderbird extension.
 
 ## Run locally
 
 ```powershell
-cd codex-thunderbird-plugin
+cd codex-plugin
 npm run start
 ```
 
@@ -28,6 +27,16 @@ Open the Thunderbird extension popup, enter the bridge URL and PIN, and pair.
 The MCP server does not read mail directly. It queues requests for the
 Thunderbird extension, waits for the extension to respond, and returns that
 result to Codex.
+
+The local HTTP bridge starts lazily when `start_pairing` or a paired
+Thunderbird command needs it. This lets Codex list the available MCP tools
+without binding localhost during plugin startup.
+
+Mailbox access is enforced in Thunderbird. Open the add-on popup and use
+`Manage allowed accounts` to choose all accounts or only selected accounts.
+Blocked accounts remain visible in `list_accounts`, but email details are
+redacted and account-specific commands return a `Manage allowed accounts`
+error.
 
 ## Command categories
 

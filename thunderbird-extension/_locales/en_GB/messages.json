@@ -1,0 +1,125 @@
+{
+  "extensionName": {
+    "message": "Codex Thunderbird Plugin"
+  },
+  "extensionDescription": {
+    "message": "Add-on that pairs Thunderbird with the local Codex Thunderbird Plugin."
+  },
+  "extensionSubtitle": {
+    "message": "Local mail access for Codex"
+  },
+  "statusNotPaired": {
+    "message": "Not paired"
+  },
+  "statusNotPairedDetail": {
+    "message": "Start pairing in Codex, then enter the bridge URL and PIN."
+  },
+  "statusBridgeError": {
+    "message": "Bridge unreachable"
+  },
+  "statusPaired": {
+    "message": "Paired"
+  },
+  "statusPairedDetail": {
+    "message": "Thunderbird is polling the local Codex bridge."
+  },
+  "statusPairedSeen": {
+    "message": "Last local bridge contact: $TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusPairing": {
+    "message": "Pairing"
+  },
+  "statusPairingDetail": {
+    "message": "Checking the local Codex bridge."
+  },
+  "statusInputError": {
+    "message": "Action needed"
+  },
+  "pairedBridge": {
+    "message": "Paired bridge"
+  },
+  "disconnect": {
+    "message": "Disconnect"
+  },
+  "bridgeUrl": {
+    "message": "Bridge URL"
+  },
+  "pairingPin": {
+    "message": "Pairing PIN"
+  },
+  "pair": {
+    "message": "Pair"
+  },
+  "manageAccounts": {
+    "message": "Manage allowed accounts"
+  },
+  "open": {
+    "message": "Open"
+  },
+  "close": {
+    "message": "Close"
+  },
+  "allAccountsAccess": {
+    "message": "All accounts access"
+  },
+  "selectedAccountsAccess": {
+    "message": "Only selected accounts"
+  },
+  "saveAccess": {
+    "message": "Save allowed accounts"
+  },
+  "accessSummaryAll": {
+    "message": "Codex may access all $COUNT$ Thunderbird accounts.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "accessSummarySelected": {
+    "message": "Codex may access $SELECTED$ of $TOTAL$ Thunderbird accounts.",
+    "placeholders": {
+      "selected": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "pairingGuide": {
+    "message": "Pairing guide"
+  },
+  "guideStep1": {
+    "message": "Install and enable the Codex extension from the GitHub repository."
+  },
+  "guideStep2": {
+    "message": "In Codex, call start_pairing from Codex Thunderbird."
+  },
+  "guideStep3": {
+    "message": "Paste the bridge URL and six-digit PIN here, then click Pair."
+  },
+  "guideStep4": {
+    "message": "Use Manage allowed accounts to decide which Thunderbird accounts Codex may access."
+  },
+  "installHelp": {
+    "message": "Install Codex extension"
+  },
+  "installHelpText": {
+    "message": "Add the GitHub repository as a Codex plugin source, then install Codex Thunderbird."
+  },
+  "errorLoopback": {
+    "message": "Bridge URL must be localhost or 127.0.0.1."
+  },
+  "errorPin": {
+    "message": "Enter the six-digit PIN from Codex."
+  },
+  "errorPairingFailed": {
+    "message": "Pairing failed."
+  }
+}

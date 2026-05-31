@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Codex Thunderbird Plugin</title>
+    <title data-i18n="extensionName">Codex Thunderbird Plugin</title>
     <link rel="stylesheet" href="popup.css">
   </head>
   <body>
@@ -10,44 +10,75 @@
       <header>
         <img src="icons/icon-64.png" alt="">
         <div>
-          <h1>Codex Thunderbird Plugin</h1>
-          <p id="status">Not paired</p>
+          <h1 data-i18n="extensionName">Codex Thunderbird Plugin</h1>
+          <p data-i18n="extensionSubtitle">Local mail access for Codex</p>
         </div>
       </header>
 
-      <section class="steps">
-        <ol>
-          <li>In Codex, call <code>start_pairing</code>.</li>
-          <li>Paste the bridge URL and six-digit PIN below.</li>
-          <li>Click Pair, then check <code>get_status</code>.</li>
-        </ol>
+      <section id="statusBox" class="status warning">
+        <strong id="statusTitle" data-i18n="statusNotPaired">Not paired</strong>
+        <span id="statusDetail" data-i18n="statusNotPairedDetail">Start pairing in Codex, then enter the bridge URL and PIN.</span>
+      </section>
+
+      <section id="pairedPanel" class="panel hidden">
+        <div>
+          <span class="label" data-i18n="pairedBridge">Paired bridge</span>
+          <code id="pairedBridgeUrl"></code>
+        </div>
+        <button id="disconnect" type="button" class="secondary" data-i18n="disconnect">Disconnect</button>
       </section>
 
       <form id="pairForm">
         <label>
-          <span>Bridge URL</span>
+          <span data-i18n="bridgeUrl">Bridge URL</span>
           <input id="bridgeUrl" value="http://127.0.0.1:17654" spellcheck="false" autocomplete="off">
         </label>
         <label>
-          <span>Pairing PIN</span>
+          <span data-i18n="pairingPin">Pairing PIN</span>
           <input id="pin" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
         </label>
-        <div class="actions">
-          <button id="pair" type="submit">Pair</button>
-          <button id="disconnect" type="button">Disconnect</button>
-        </div>
+        <button id="pair" type="submit" data-i18n="pair">Pair</button>
       </form>
 
-      <dl>
-        <div>
-          <dt>Local only</dt>
-          <dd>Only localhost bridge URLs are accepted.</dd>
+      <section class="panel access">
+        <div class="panelHead">
+          <div>
+            <h2 data-i18n="manageAccounts">Manage allowed accounts</h2>
+            <p id="accessSummary"></p>
+          </div>
+          <button id="toggleAccess" type="button" class="secondary" data-i18n="open">Open</button>
         </div>
-        <div>
-          <dt>Access</dt>
-          <dd>Codex can read and organize mail after pairing.</dd>
+        <div id="accessManager" class="hidden">
+          <label class="radio">
+            <input type="radio" name="accessMode" value="all">
+            <span data-i18n="allAccountsAccess">All accounts access</span>
+          </label>
+          <label class="radio">
+            <input type="radio" name="accessMode" value="selected">
+            <span data-i18n="selectedAccountsAccess">Only selected accounts</span>
+          </label>
+          <div id="accountList" class="accountList"></div>
+          <button id="saveAccess" type="button" data-i18n="saveAccess">Save allowed accounts</button>
         </div>
-      </dl>
+      </section>
+
+      <details>
+        <summary data-i18n="pairingGuide">Pairing guide</summary>
+        <ol>
+          <li data-i18n="guideStep1">Install and enable the Codex extension from the GitHub repository.</li>
+          <li data-i18n="guideStep2">In Codex, call start_pairing from Codex Thunderbird.</li>
+          <li data-i18n="guideStep3">Paste the bridge URL and six-digit PIN here, then click Pair.</li>
+          <li data-i18n="guideStep4">Use Manage allowed accounts to decide which Thunderbird accounts Codex may access.</li>
+        </ol>
+      </details>
+
+      <details>
+        <summary data-i18n="installHelp">Install Codex extension</summary>
+        <p>
+          <span data-i18n="installHelpText">Add the GitHub repository as a Codex plugin source, then install Codex Thunderbird.</span>
+          <a id="repoLink" href="https://github.com/ulri-one/codex-thunderbird-plugin" target="_blank" rel="noreferrer">GitHub</a>
+        </p>
+      </details>
     </main>
     <script src="popup.js"></script>
   </body>

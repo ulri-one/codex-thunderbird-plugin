@@ -6,7 +6,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $sizes = @(16, 32, 48, 64, 128)
 $targets = @(
   (Join-Path $repoRoot "thunderbird-extension\icons"),
-  (Join-Path $repoRoot "codex-thunderbird-plugin\assets")
+  (Join-Path $repoRoot "codex-plugin\assets")
 )
 
 foreach ($target in $targets) {

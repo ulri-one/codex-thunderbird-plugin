@@ -1,0 +1,125 @@
+{
+  "extensionName": {
+    "message": "Codex Thunderbird Plugin"
+  },
+  "extensionDescription": {
+    "message": "Add-on, das Thunderbird mit dem lokalen Codex Thunderbird Plugin koppelt."
+  },
+  "extensionSubtitle": {
+    "message": "Lokaler E-Mail-Zugriff für Codex"
+  },
+  "statusNotPaired": {
+    "message": "Nicht gekoppelt"
+  },
+  "statusNotPairedDetail": {
+    "message": "Starte die Kopplung in Codex und gib dann Bridge-URL und PIN ein."
+  },
+  "statusBridgeError": {
+    "message": "Bridge nicht erreichbar"
+  },
+  "statusPaired": {
+    "message": "Gekoppelt"
+  },
+  "statusPairedDetail": {
+    "message": "Thunderbird fragt die lokale Codex-Bridge ab."
+  },
+  "statusPairedSeen": {
+    "message": "Letzter lokaler Bridge-Kontakt: $TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusPairing": {
+    "message": "Kopplung läuft"
+  },
+  "statusPairingDetail": {
+    "message": "Die lokale Codex-Bridge wird geprüft."
+  },
+  "statusInputError": {
+    "message": "Aktion erforderlich"
+  },
+  "pairedBridge": {
+    "message": "Gekoppelte Bridge"
+  },
+  "disconnect": {
+    "message": "Trennen"
+  },
+  "bridgeUrl": {
+    "message": "Bridge-URL"
+  },
+  "pairingPin": {
+    "message": "Kopplungs-PIN"
+  },
+  "pair": {
+    "message": "Koppeln"
+  },
+  "manageAccounts": {
+    "message": "Erlaubte Konten verwalten"
+  },
+  "open": {
+    "message": "Öffnen"
+  },
+  "close": {
+    "message": "Schließen"
+  },
+  "allAccountsAccess": {
+    "message": "Zugriff auf alle Konten"
+  },
+  "selectedAccountsAccess": {
+    "message": "Nur ausgewählte Konten"
+  },
+  "saveAccess": {
+    "message": "Erlaubte Konten speichern"
+  },
+  "accessSummaryAll": {
+    "message": "Codex darf auf alle $COUNT$ Thunderbird-Konten zugreifen.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "accessSummarySelected": {
+    "message": "Codex darf auf $SELECTED$ von $TOTAL$ Thunderbird-Konten zugreifen.",
+    "placeholders": {
+      "selected": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "pairingGuide": {
+    "message": "Kopplungsanleitung"
+  },
+  "guideStep1": {
+    "message": "Installiere und aktiviere die Codex-Erweiterung aus dem GitHub-Repository."
+  },
+  "guideStep2": {
+    "message": "Rufe in Codex das Plugin \"Codex Thunderbird\" mit dem Befehl \"start_pairing\" auf."
+  },
+  "guideStep3": {
+    "message": "Füge Bridge-URL und sechsstellige PIN hier ein und klicke auf Koppeln."
+  },
+  "guideStep4": {
+    "message": "Lege unter \"Erlaubte Konten verwalten\" fest, auf welche Thunderbird-Konten Codex zugreifen darf."
+  },
+  "installHelp": {
+    "message": "Codex-Erweiterung installieren"
+  },
+  "installHelpText": {
+    "message": "Füge das GitHub-Repository als Codex-Pluginquelle hinzu und installiere Codex Thunderbird."
+  },
+  "errorLoopback": {
+    "message": "Die Bridge-URL muss localhost oder 127.0.0.1 sein."
+  },
+  "errorPin": {
+    "message": "Gib die sechsstellige PIN aus Codex ein."
+  },
+  "errorPairingFailed": {
+    "message": "Kopplung fehlgeschlagen."
+  }
+}

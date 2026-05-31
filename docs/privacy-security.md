@@ -2,8 +2,9 @@
 
 ## Local-only communication
 
-The bridge must bind to `127.0.0.1`, not `0.0.0.0`. The prototype also rejects
-requests whose remote address is not loopback.
+The bridge must bind to `127.0.0.1`, not `0.0.0.0`. It starts lazily when
+pairing or a Thunderbird command needs it, and rejects requests whose remote
+address is not loopback.
 
 ## Pairing
 
@@ -30,6 +31,9 @@ Recommended production hardening:
 
 MCP tools should default to metadata-first responses:
 
+- Thunderbird's `Manage allowed accounts` setting can limit Codex to selected
+  accounts. Blocked accounts are visible in account listings with email details
+  redacted, and account-specific commands are rejected.
 - Folder listing returns IDs, names, special-use flags, and counts when
   available.
 - Message listing returns headers and snippets, not full bodies.

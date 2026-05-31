@@ -1,7 +1,5 @@
 # Codex Thunderbird Plugin Extension
 
-Pre-release version: `0.4.0pre1`
-
 This MailExtension pairs Thunderbird with the local Codex Thunderbird Plugin.
 
 ## Development install
@@ -11,6 +9,8 @@ This MailExtension pairs Thunderbird with the local Codex Thunderbird Plugin.
 3. Use the debug/add-on development flow to load this folder temporarily.
 4. In Codex, call `start_pairing` from the Codex Thunderbird Plugin.
 5. Open the extension popup, enter the bridge URL and PIN, and pair.
+6. Open `Manage allowed accounts` to allow all accounts or only selected
+   Thunderbird accounts.
 
 ## Permissions
 
@@ -19,6 +19,13 @@ This MailExtension pairs Thunderbird with the local Codex Thunderbird Plugin.
 - `messagesRead` lets it list and read messages and attachments.
 - `storage` stores the local bridge URL and token.
 - `http://127.0.0.1/*` allows communication with the local Codex bridge.
+
+## Account access
+
+The add-on enforces mailbox access in Thunderbird. `All accounts access` allows
+Codex to use every configured account. `Only selected accounts` blocks commands
+for other accounts, returns a `Manage allowed accounts` error, and redacts email
+details for blocked accounts in `list_accounts`.
 
 ## Notes
 

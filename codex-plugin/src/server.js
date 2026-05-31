@@ -5,8 +5,8 @@ const path = require("path");
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.CODEX_THUNDERBIRD_PORT || 17654);
-const REQUEST_TIMEOUT_MS = 45000;
-const POLL_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = clampEnvNumber("CODEX_THUNDERBIRD_REQUEST_TIMEOUT_MS", 45000, 5000, 300000);
+const POLL_TIMEOUT_MS = clampEnvNumber("CODEX_THUNDERBIRD_POLL_TIMEOUT_MS", 15000, 1000, 60000);
 const PAIRING_TTL_MS = 120000;
 const MAX_BODY_BYTES = 1024 * 1024;
 const MAX_PENDING_REQUESTS = 100;
@@ -23,13 +23,16 @@ let failedPairAttempts = [];
 let pending = [];
 let waiters = new Map();
 let pollWaiters = [];
+let bridgeServer = null;
+let bridgeStarted = false;
+let bridgeStarting = null;
 
 const tools = [
-  tool("start_pairing", "Start local Thunderbird pairing and return a short-lived PIN."),
-  tool("get_status", "Get local bridge and Thunderbird extension connection status."),
+  tool("start_pairing", "Start the local bridge on 127.0.0.1, create a short-lived PIN, and return the URL/PIN to paste into Thunderbird."),
+  tool("get_status", "Get local bridge, pairing, last-seen, and Thunderbird extension connection status."),
   tool("revoke_pairing", "Revoke the current Thunderbird extension token and clear pending requests."),
-  tool("get_capabilities", "List all supported Codex Thunderbird Plugin command categories and commands."),
-  tool("list_accounts", "List Thunderbird accounts, identities, and email addresses when Thunderbird exposes them."),
+  tool("get_capabilities", "Show pairing steps, mailbox access rules, command categories, and every supported Thunderbird command."),
+  tool("list_accounts", "List Thunderbird accounts. Accounts blocked in Thunderbird Manage allowed accounts are returned with sensitive email details redacted."),
   tool("list_folders", "List folders for a Thunderbird account.", { accountId: str(), includeSubFolders: bool() }, ["accountId"]),
   tool("create_folder", "Create a folder under a parent Thunderbird folder.", { parentFolderId: str(), name: str() }, ["parentFolderId", "name"]),
   tool("rename_folder", "Rename a Thunderbird folder.", { folderId: str(), name: str() }, ["folderId", "name"]),
@@ -121,8 +124,8 @@ const tools = [
     dryRun: bool(),
     limit: num()
   }, ["id"]),
-  tool("add_inbox", "Allow an account or folder scope to be visible to Codex.", { scope: str() }, ["scope"]),
-  tool("remove_inbox", "Remove an account or folder scope from Codex visibility.", { scope: str() }, ["scope"])
+  tool("add_inbox", "Legacy Codex-side scope note. Thunderbird-side Manage allowed accounts is the enforced mailbox access control.", { scope: str() }, ["scope"]),
+  tool("remove_inbox", "Remove a legacy Codex-side scope note. Use Thunderbird Manage allowed accounts for enforced access control.", { scope: str() }, ["scope"])
 ];
 
 function tool(name, description, properties, required) {
@@ -155,6 +158,12 @@ function arr() {
 
 function obj() {
   return { type: "object" };
+}
+
+function clampEnvNumber(name, fallback, min, max) {
+  const value = Number(process.env[name] || fallback);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(value, min), max);
 }
 
 function loadState() {
@@ -303,7 +312,32 @@ function recordFailedPairAttempt() {
   failedPairAttempts.push(Date.now());
 }
 
-function startPairing() {
+async function startBridge() {
+  if (bridgeStarted) return;
+  if (bridgeStarting) return bridgeStarting;
+  bridgeStarting = new Promise((resolve, reject) => {
+    const server = http.createServer(handleHttp);
+    server.on("error", error => {
+      if (!bridgeStarted) {
+        bridgeServer = null;
+        bridgeStarting = null;
+        reject(error);
+        return;
+      }
+      process.stderr.write(`Codex Thunderbird Plugin bridge failed: ${error.message}\n`);
+    });
+    server.listen(PORT, HOST, () => {
+      bridgeServer = server;
+      bridgeStarted = true;
+      bridgeStarting = null;
+      resolve();
+    });
+  });
+  await bridgeStarting;
+}
+
+async function startPairing() {
+  await startBridge();
   pairing = {
     pin: String(crypto.randomInt(0, 1000000)).padStart(6, "0"),
     expiresAt: Date.now() + PAIRING_TTL_MS
@@ -411,6 +445,7 @@ async function callTool(name, args) {
   if (name === "get_status") {
     return {
       bridgeUrl: `http://${HOST}:${PORT}`,
+      bridgeStarted,
       paired: Boolean(persisted.token),
       extensionId: persisted.extensionId || null,
       lastSeenAt: persisted.lastSeenAt || null,
@@ -438,19 +473,32 @@ async function callTool(name, args) {
     saveState();
     return { scopes: persisted.scopes };
   }
+  await startBridge();
   return enqueue(name, args);
 }
 
 function capabilities() {
   return {
+    pairingFlow: [
+      "Call start_pairing in Codex.",
+      "Open the Codex Thunderbird Plugin popup in Thunderbird.",
+      "Paste the returned bridgeUrl and six-digit pin.",
+      "Click Pair, then call get_status.",
+      "Use Manage allowed accounts in Thunderbird to allow all accounts or selected accounts."
+    ],
+    securityModel: {
+      localBridge: `The HTTP bridge listens only on ${HOST}:${PORT} and starts lazily when start_pairing or a Thunderbird command needs it.`,
+      pairing: "Pairing uses a short-lived PIN and a local bearer token stored by the Thunderbird extension.",
+      mailboxAccess: "Thunderbird enforces Manage allowed accounts. Blocked accounts stay visible in list_accounts with email details redacted, and non-allowed mail commands return an error that names Manage allowed accounts."
+    },
     account: ["list_accounts", "list_folders"],
     folders: ["create_folder", "rename_folder", "delete_folder", "move_messages", "copy_messages"],
     email: ["search_messages", "list_messages", "read_message", "update_message_flags", "archive_messages", "delete_messages"],
     tags: ["list_tags", "create_tag", "update_tag", "delete_tag", "set_message_tags"],
     attachments: ["list_attachments", "get_attachment", "get_attachment_chunk", "save_attachment"],
     rules: ["list_rules", "create_rule", "update_rule", "delete_rule", "run_rule"],
-    pairing: ["start_pairing", "get_status", "revoke_pairing"],
-    scopes: ["add_inbox", "remove_inbox"]
+    pairing: ["start_pairing", "get_status", "revoke_pairing", "get_capabilities"],
+    legacyCodexScopes: ["add_inbox", "remove_inbox"]
   };
 }
 
@@ -470,7 +518,7 @@ async function handleRpc(line) {
         result: {
           protocolVersion: "2024-11-05",
           capabilities: { tools: {} },
-          serverInfo: { name: "codex-thunderbird", version: "0.4.0-pre.1" }
+          serverInfo: { name: "codex-thunderbird", version: "1.0.0" }
         }
       });
       return;
@@ -496,13 +544,6 @@ async function handleRpc(line) {
     writeRpc({ jsonrpc: "2.0", id: request.id, error: { code: -32000, message: error.message } });
   }
 }
-
-const server = http.createServer(handleHttp);
-server.on("error", error => {
-  process.stderr.write(`Codex Thunderbird Plugin bridge failed: ${error.message}\n`);
-  process.exit(1);
-});
-server.listen(PORT, HOST);
 
 let buffer = "";
 process.stdin.setEncoding("utf8");

@@ -25,18 +25,19 @@ Add an MCP server entry to the Codex config file:
 ```toml
 [mcp_servers.codex-thunderbird]
 command = "node"
-args = ["C:\\path\\to\\codex-thunderbird-plugin\\src\\server.js"]
-cwd = "C:\\path\\to\\codex-thunderbird-plugin"
+args = ["C:\\path\\to\\codex-plugin\\src\\server.js"]
+cwd = "C:\\path\\to\\codex-plugin"
 ```
 
 Then restart Codex. The server should expose tools such as `start_pairing`,
 `list_accounts`, `list_folders`, `list_messages`, `read_message`, and
-`get_attachment`.
+`get_attachment`. The MCP process lists tools without immediately binding the
+local HTTP bridge; the bridge starts when `start_pairing` or a paired command
+needs Thunderbird.
 
 ## Codex personal plugin install
 
-For a plugin-style install, copy `codex-thunderbird-plugin` to the personal
-plugin location and add it to the personal marketplace.
+For a plugin-style install, copy `codex-plugin` to the personal plugin location and add it to the personal marketplace.
 
 Run:
 
@@ -55,7 +56,7 @@ Codex plugins can be prepared for GitHub installation by keeping a valid
 After pushing this repository to GitHub, use one of these flows:
 
 ```powershell
-npx codex-marketplace add OWNER/REPO/codex-thunderbird-plugin --plugin
+npx codex-marketplace add OWNER/REPO/codex-plugin --plugin
 ```
 
 or add the repository marketplace in Codex if your Codex version supports remote
@@ -63,7 +64,7 @@ marketplace sources:
 
 ```powershell
 codex plugin marketplace add https://github.com/OWNER/REPO
-codex plugin add codex-thunderbird@codex-thunderbird-plugin
+codex plugin add codex-thunderbird@codex-thunderbird
 ```
 
 Replace `OWNER/REPO` with the actual GitHub repository. The local personal
@@ -76,7 +77,8 @@ install remains the lowest-friction development flow.
 3. In Thunderbird, open the Codex Thunderbird Plugin popup.
 4. Enter the bridge URL and PIN.
 5. Click Pair.
-6. In Codex, call `get_status`; it should report `paired: true`.
+6. Open `Manage allowed accounts` and choose all accounts or selected accounts.
+7. In Codex, call `get_status`; it should report `paired: true`.
 
 ## First useful calls
 
@@ -95,6 +97,6 @@ To disconnect Thunderbird from Codex:
 1. Call `revoke_pairing` in Codex.
 2. Click Disconnect in the Thunderbird popup.
 
-The Codex bridge stores its token in `codex-thunderbird-plugin\.codex-thunderbird-state\state.json`
+The Codex bridge stores its token in `codex-plugin\.codex-thunderbird-state\state.json`
 by default. Set `CODEX_THUNDERBIRD_STATE_DIR` if you want to keep state in a
 different local directory.

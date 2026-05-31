@@ -29,11 +29,3 @@
   developer mode is desired.
 - Package the Codex plugin through a personal marketplace entry.
 - Add an installer script for local development.
-
-## Phase 5: Optional direct mail connector
-
-- Add a separate generic IMAP/POP3/SMTP MCP connector only if Thunderbird is not
-  the desired source of truth.
-- Use OAuth where providers support it.
-- Encrypt stored credentials with OS keychain integration.
-

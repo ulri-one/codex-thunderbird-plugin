@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$source = Join-Path $repoRoot "codex-thunderbird-plugin"
+$source = Join-Path $repoRoot "codex-plugin"
 $pluginRoot = Join-Path $HOME "plugins"
 $target = Join-Path $pluginRoot "codex-thunderbird"
 $marketplaceDir = Join-Path $HOME ".agents\plugins"

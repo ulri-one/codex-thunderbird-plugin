@@ -11,9 +11,17 @@
 ## Accounts
 
 - `list_accounts` - list Thunderbird accounts with names, types, folders, and
-  identity email addresses where Thunderbird exposes them.
-- `add_inbox` - add a Codex-side account or folder scope string.
-- `remove_inbox` - remove a Codex-side account or folder scope string.
+  identity email addresses where Thunderbird exposes them. Accounts blocked by
+  Thunderbird's `Manage allowed accounts` setting are still listed, but email
+  details are redacted and the account is marked as blocked.
+- `add_inbox` - legacy Codex-side scope note. It does not replace Thunderbird's
+  enforced `Manage allowed accounts` setting.
+- `remove_inbox` - remove a legacy Codex-side scope note.
+
+Mailbox access is enforced by the Thunderbird add-on. In the Thunderbird popup,
+use `Manage allowed accounts` to choose `All accounts access` or selected
+accounts only. Commands that target blocked accounts fail with an error naming
+`Manage allowed accounts` so the user knows where to fix the policy.
 
 ## Folders
 
@@ -36,6 +44,10 @@ Search examples:
 ```json
 { "query": { "subject": "invoice" }, "limit": 25 }
 ```
+
+When `Manage allowed accounts` is set to selected accounts only, broad
+unscoped searches are blocked. Scope searches with an allowed `folderId` or an
+allowed `accountId` plus `path`.
 
 ```json
 { "query": { "from": "alice@example.com", "read": false }, "limit": 50 }
@@ -108,15 +120,3 @@ Supported rule actions:
 - `markRead`
 - `flag`
 - `tag`
-
-## Provider API Comparison
-
-Gmail and Microsoft Graph expose HTTP APIs for many of the same ideas: messages,
-threads, labels/categories, attachments, search queries, and filters/rules. The
-bridge implements the portable subset through Thunderbird instead of talking to
-providers directly.
-
-Direct provider APIs can offer extra features such as Gmail server-side filters
-or Outlook inbox rules, but they require OAuth/app registration, provider
-permissions, refresh-token storage, and provider-specific behavior. This project
-keeps credentials in Thunderbird and uses local-only communication.

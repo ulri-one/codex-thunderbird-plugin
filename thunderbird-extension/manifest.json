@@ -1,13 +1,14 @@
 {
   "manifest_version": 2,
-  "name": "Codex Thunderbird Plugin",
-  "version": "0.4.0pre1",
-  "description": "Pre-release add-on that pairs Thunderbird with the local Codex Thunderbird Plugin.",
+  "name": "__MSG_extensionName__",
+  "version": "1.0.0",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en_US",
   "author": "ULRI",
   "homepage_url": "https://ulri.one",
   "browser_specific_settings": {
     "gecko": {
-      "id": "codex-thunderbird-plugin@example.local",
+      "id": "codex-thunderbird-plugin@ulri.one",
       "strict_min_version": "102.0"
     }
   },
@@ -33,7 +34,7 @@
     "128": "icons/icon-128.png"
   },
   "browser_action": {
-    "default_title": "Codex Thunderbird Plugin",
+    "default_title": "__MSG_extensionName__",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",

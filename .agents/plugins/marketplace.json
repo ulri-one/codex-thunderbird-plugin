@@ -1,14 +1,14 @@
 {
-  "name": "codex-thunderbird-plugin",
+  "name": "codex-thunderbird",
   "interface": {
-    "displayName": "Codex Thunderbird Plugin"
+    "displayName": "Codex Thunderbird"
   },
   "plugins": [
     {
       "name": "codex-thunderbird",
       "source": {
         "source": "local",
-        "path": "./codex-thunderbird-plugin"
+        "path": "./codex-plugin"
       },
       "policy": {
         "installation": "AVAILABLE",

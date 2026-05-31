@@ -1,7 +1,5 @@
 # Codex Thunderbird Plugin
 
-Pre-release version: `0.4.0-pre.1`
-
 Codex Thunderbird Plugin connects your local Thunderbird installation to Codex.
 It lets Codex work with the mail accounts already configured in Thunderbird
 without asking for IMAP, SMTP, OAuth, or mail-provider passwords.
@@ -13,8 +11,7 @@ loopback-only bridge on your machine. Thunderbird runs a MailExtension add-on
 that calls Thunderbird's supported mail APIs. The two sides pair with a short
 PIN, then exchange requests only over `127.0.0.1`.
 
-This is a pre-release. It is useful for local testing and early adopters, but
-the interface, packaging, and permission model may still change.
+This is the first public major release. It is useful for testing and early adopters, but the interface, packaging, and permission model may still change.
 
 ## What It Provides
 
@@ -24,6 +21,8 @@ the interface, packaging, and permission model may still change.
 - Move, copy, archive, delete, flag, and tag messages where Thunderbird and the
   account type allow it.
 - Create and run extension-local sorting rules on demand.
+- Allow Codex to access all Thunderbird accounts or only selected accounts,
+  enforced inside the Thunderbird add-on.
 - Keep mail credentials inside Thunderbird.
 
 ## Repository Layout
@@ -31,7 +30,7 @@ the interface, packaging, and permission model may still change.
 - `thunderbird-extension/` - Thunderbird MailExtension add-on. It displays the
   pairing popup, stores the local bridge token, and performs account, folder,
   message, tag, rule, and attachment operations through Thunderbird APIs.
-- `codex-thunderbird-plugin/` - Codex plugin and MCP server. It exposes Codex
+- `codex-plugin/` - Codex plugin and MCP server. It exposes Codex
   tools, starts the local bridge at `http://127.0.0.1:17654`, and queues
   requests for the paired Thunderbird add-on.
 - `assets/` - Source artwork for the shared plugin/add-on icon.
@@ -74,7 +73,7 @@ For local development, you can also install the plugin from a clone:
 .\scripts\install-codex-plugin.ps1
 ```
 
-That copies `codex-thunderbird-plugin/` into your local Codex plugin directory
+That copies `codex-plugin/` into your local Codex plugin directory
 and adds a personal marketplace entry.
 
 ## Install The Thunderbird Add-on
@@ -101,13 +100,13 @@ Pairing is required before Codex can read anything from Thunderbird.
    @Codex Thunderbird Plugin start_pairing
    ```
 
-2. Approve the elevated permission request when Codex asks to leave the sandbox
-   for that command. The bridge must bind to localhost networking
-   (`127.0.0.1:17654`) so Thunderbird can reach it.
-3. Codex returns a bridge URL and a short-lived PIN.
-4. In Thunderbird, click the `Codex Thunderbird Plugin` add-on button.
-5. Enter the bridge URL and PIN.
-6. Click pair.
+2. Codex returns a bridge URL and a short-lived PIN. The local bridge starts
+   lazily on `127.0.0.1:17654` when pairing begins.
+3. In Thunderbird, click the `Codex Thunderbird Plugin` add-on button.
+4. Enter the bridge URL and PIN.
+5. Click Pair.
+6. Open `Manage allowed accounts` in the Thunderbird popup and choose either
+   `All accounts access` or selected accounts only.
 
 After pairing, you can ask Codex things like:
 
@@ -135,6 +134,7 @@ The script writes:
 
 - `release/codex-thunderbird-plugin.xpi`
 - `release/codex-thunderbird-plugin.zip`
+- versioned copies such as `release/codex-thunderbird-plugin-v1.0.0.xpi`
 - `release/CODEX-INSTALLATION.md`
 
 ## Privacy And Security

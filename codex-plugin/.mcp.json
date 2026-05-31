@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "codex-thunderbird": {
+      "command": "node",
+      "args": ["src/server.js"],
+      "cwd": ".",
+      "env": {
+        "CODEX_THUNDERBIRD_REQUEST_TIMEOUT_MS": "60000",
+        "CODEX_THUNDERBIRD_POLL_TIMEOUT_MS": "15000"
+      }
+    }
+  }
+}
